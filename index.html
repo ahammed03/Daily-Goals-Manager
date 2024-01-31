@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals Manager</title>
+    <link rel="stylesheet" href="./output.css">
+</head>
+
+
+<body class="w-screen h-screen flex justify-center items-center font-serif">
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <div class="border-2 border-black flex flex-col p-4 rounded-md">
+        <h1 class="font-bold text-2xl mb-2">Daily Tasks</h1>
+        <div class="inputBox mb-2 border p-1 flex justify-between rounded-sm">
+            <input class="outline-none" type="text" name="" id="taskInput" placeholder="Enter Task">
+            <button type="button" onclick="addTask()" class="bg-green-500 px-2 py-0.5 rounded-md shadow-md text-white">Add</button>
+        </div>
+        <div class="options flex justify-between px-1 mb-2">
+            <p class="font-bold w-9/12">Tasks <span id="tasksCount"></span></p>
+            <button class="text-green-600" type="button" onclick="completeAllTasks()">&#x2714;</button>
+            <button type="button" onclick="deleteAllTasks()">🗑️</button>
+        </div>
+        <div class="tasksContainer border p-2 rounded-sm" id="tasksContainer">
+
+
+        </div>
+
+    </div>
+    <script>
+        let allComplete = false;
+       
+        // Function to store an array in localStorage
+        function storeArray(key, array) {
+            try {
+                localStorage.setItem(key, JSON.stringify(array));
+                // console.log('Array stored successfully.');
+            } catch (error) {
+                // console.error('Error storing array:', error);
+            }
+        }
+
+        // Function to retrieve an array from localStorage
+        function retrieveArray(key) {
+            try {
+                const storedArray = JSON.parse(localStorage.getItem(key));
+                // console.log('Array retrieved successfully.');
+                return storedArray || []; // Return an empty array if no array is found
+            } catch (error) {
+                // console.error('Error retrieving array:', error);
+                return [];
+            }
+        }
+        function addTask(){
+            const newTask = document.getElementById('taskInput').value;
+            
+            let tasks= retrieveArray('tasks');
+            tasks.push({'task':newTask , 'isCompleted':false})
+            storeArray('tasks',tasks);
+
+
+            loadTasks();
+            document.getElementById('taskInput').value = "";
+        }
+
+        
+        function loadTasks() {
+            
+            let tasks = retrieveArray('tasks');
+            const lineThrough = "line-through"
+            const done = "&#x2714;"
+            const notDone = "&#x2716;"
+            const green = "text-green-600"
+            const red = "text-red-600"
+
+            const taskContainer = document.getElementById('tasksContainer')
+            taskContainer.innerHTML = "";
+            taskContainer.innerHTML = tasks.length < 1 ? `<p class="text-center text-slate-500">You have zero Tasks </p>` : null;
+            tasks.map((ele, id) => {
+                taskContainer.innerHTML += `
+                <div class="task border-b flex justify-around w-60 py-0.5" id="${id}">
+                    <p class="taskContent w-3/5 overflow-x-scroll ${ele.isCompleted ? lineThrough : null} ">${ele.task}</p>
+                    <button class="${ele.isCompleted ? red : green}" type="button" onclick="taskComplete(event)">${ele.isCompleted ? notDone : done}</button>
+                    <button class="" type="button" onclick="editTask(event)">&#x270D;</button>
+                <button class="" type="button" onclick="deleteTask(event)">🗑️</button>
+            </div>`
+            })
+            document.getElementById('tasksCount').innerText = tasks.length;
+        }
+        loadTasks();
+        function editTask(event) {
+            event.target.parentNode.innerHTML = `
+                <input class=" border px-1 w-3/5" type="text" id="newTaskName" placeholder="Task">
+                <button type="button" class="bg-green-400 text-white rounded-sm px-1" onclick="saveNewName(event)">Save</button>
+                <button type="button" class=" text-red-500 border rounded-sm px-1" onclick="loadTasks()">Close</button>`
+
+        }
+        function saveNewName(event) {
+            let tasks= retrieveArray('tasks');
+            const newName = document.getElementById('newTaskName').value;
+            const taskId = event.target.parentNode.id;
+            if (taskId >= 0 && taskId < tasks.length) {
+                try {
+                    tasks[taskId].task = newName;
+                    storeArray('tasks', tasks);
+                    loadTasks();
+
+                } catch (error) {
+                    console.log(error)
+
+                }
+            } else {
+                console.log('Invalid task ID:', taskId);
+            }
+
+        }
+        function taskComplete(event) {
+            let tasks= retrieveArray('tasks');
+            tasks[event.target.parentNode.id].isCompleted = !tasks[event.target.parentNode.id].isCompleted;
+            storeArray('tasks', tasks);
+            loadTasks();
+
+
+        }
+        function deleteTask(event) {
+            let tasks= retrieveArray('tasks');
+            tasks.splice(event.target.parentNode.id, 1)
+            storeArray('tasks', tasks);
+            loadTasks();
+
+        }
+        function deleteAllTasks() {
+            tasks = []
+            storeArray('tasks', tasks);
+            loadTasks();
+
+        }
+
+        function completeAllTasks() {
+            let tasks= retrieveArray('tasks');
+
+            tasks.forEach(element => {
+                if (allComplete) {
+                    element.isCompleted = true;
+                }
+                else {
+                    element.isCompleted = false;
+                }
+            });
+            allComplete = !allComplete;
+            storeArray('tasks', tasks);
+            loadTasks();
+
+        }
+    </script>
+
+
+</body>
+
+</html>
