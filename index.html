@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goals Manager</title>
+    <title>Document</title>
     <link rel="stylesheet" href="./output.css">
 </head>
 
@@ -15,24 +15,65 @@
             display: none;
         }
     </style>
-    <div class="border-2 border-black flex flex-col p-4 rounded-md">
-        <h1 class="font-bold text-2xl mb-2">Daily Tasks</h1>
-        <div class="inputBox mb-2 border p-1 flex justify-between rounded-sm">
-            <input class="outline-none" type="text" name="" id="taskInput" placeholder="Enter Task">
-            <button type="button" onclick="addTask()" class="bg-green-500 px-2 py-0.5 rounded-md shadow-md text-white">Add</button>
+    <div class="border-2 border-black flex flex-col p-3 rounded-md w-80">
+        <div class="flex mb-2 justify-between items-center">
+            <h1 class="font-bold text-2xl w-2/4">Daily Tasks</h1>
+            <div class="flex flex-col items-end text-slate-500 font-mono">
+                <p id="currentTime" class=""></p>
+                <p id="currentDate"></p>
+            </div>
         </div>
+
+        <div class="inputBox mb-2 border p-1 flex justify-around rounded-sm">
+            <input class="outline-none" type="text" name="" id="taskInput" placeholder="Enter Task">
+            <input type="time" name="" id="timeInput" placeholder="">
+        </div>
+        <button type="button" onclick="addTask()" class="bg-green-500 px-2 py-0.5 rounded-md shadow-md text-white mb-2">Add</button>
         <div class="options flex justify-between px-1 mb-2">
-            <p class="font-bold w-9/12">Tasks <span id="tasksCount"></span></p>
+            <p class="font-bold w-9/12">Tasks <span id="tasksCount"></span> </p>
             <button class="text-green-600" type="button" onclick="completeAllTasks()">&#x2714;</button>
             <button type="button" onclick="deleteAllTasks()">🗑️</button>
         </div>
-        <div class="tasksContainer border p-2 rounded-sm" id="tasksContainer">
-
-
+        <hr>
+        <div class="flex justify-between font-light text-slate-500 px-1 my-1"><p class="">Completed <span id="completedTasks">0</span></p><p>Remaining <span id="pendingTasks">0</span></p></div>
+        <hr>
+        <div class="tasksContainer p-1 rounded-sm" id="tasksContainer">
+    
         </div>
+        
 
     </div>
     <script>
+        const currentTimeElement = document.getElementById('currentTime');
+        const currentDateElement = document.getElementById('currentDate');
+        function setTimeDate() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const day = currentDate.getDate();
+        const hours = currentDate.getHours();
+        const minutes = currentDate.getMinutes();
+        const seconds = currentDate.getSeconds();
+        const dayOfWeek = currentDate.getDay();
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = daysOfWeek[dayOfWeek];
+
+
+        // Check if DOM elements exist before updating
+        if (currentDateElement && currentTimeElement) {
+            currentDateElement.innerText = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year} ${dayName}`;
+            const formattedTime = `${hours.toString().padStart(2, '0') }:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            currentTimeElement.innerText = formattedTime;
+        }
+        // console.log(`${day}/${month}/${year}`);
+        // console.log(`${hours}:${minutes}:${seconds}`);
+        }
+        setTimeDate();
+        setInterval(() => {
+        setTimeDate();
+        }, 1000);
+
+        
         let allComplete = false;
        
         // Function to store an array in localStorage
@@ -58,14 +99,25 @@
         }
         function addTask(){
             const newTask = document.getElementById('taskInput').value;
-            
-            let tasks= retrieveArray('tasks');
-            tasks.push({'task':newTask , 'isCompleted':false})
-            storeArray('tasks',tasks);
-
-
-            loadTasks();
-            document.getElementById('taskInput').value = "";
+            if(newTask.length > 0){
+                let taskTime = document.getElementById('timeInput').value;
+                const CurrentTime = new Date();
+                const hours = CurrentTime.getHours();
+                const minutes = CurrentTime.getMinutes();
+                console.log(typeof(taskTime))
+                if(taskTime === ""){
+                    taskTime = `${hours}:${minutes}`
+                }
+                let tasks= retrieveArray('tasks');
+                tasks.push({'task':newTask , 'isCompleted':false , 'time' : taskTime})
+                storeArray('tasks',tasks);
+                loadTasks();
+                document.getElementById('timeInput').value = ""
+                document.getElementById('taskInput').value = "";
+            }
+            else{
+                alert("Invalid Task Name");
+            }
         }
 
         
@@ -83,19 +135,24 @@
             taskContainer.innerHTML = tasks.length < 1 ? `<p class="text-center text-slate-500">You have zero Tasks </p>` : null;
             tasks.map((ele, id) => {
                 taskContainer.innerHTML += `
-                <div class="task border-b flex justify-around w-60 py-0.5" id="${id}">
-                    <p class="taskContent w-3/5 overflow-x-scroll ${ele.isCompleted ? lineThrough : null} ">${ele.task}</p>
+                <div class="relative task border-b flex justify-between items-center pt-3.5" id="${id}">
+                    <p class="absolute top-0 left-0 text-xs text-slate-500 font-mono ${ele.isCompleted ? lineThrough : null}">${ele.time}</p>
+                    <p class="taskContent w-1/2 overflow-x-scroll ${ele.isCompleted ? lineThrough : null} ">${ele.task}</p>
                     <button class="${ele.isCompleted ? red : green}" type="button" onclick="taskComplete(event)">${ele.isCompleted ? notDone : done}</button>
                     <button class="" type="button" onclick="editTask(event)">&#x270D;</button>
                 <button class="" type="button" onclick="deleteTask(event)">🗑️</button>
             </div>`
             })
             document.getElementById('tasksCount').innerText = tasks.length;
+            let completedTasks = tasks.filter((ele)=>ele.isCompleted === true)
+            document.getElementById('pendingTasks').innerText = tasks.length - completedTasks.length;
+            document.getElementById('completedTasks').innerText = completedTasks.length;
         }
         loadTasks();
         function editTask(event) {
             event.target.parentNode.innerHTML = `
-                <input class=" border px-1 w-3/5" type="text" id="newTaskName" placeholder="Task">
+                <input class=" border px-1 w-1/3" type="text" id="newTaskName" placeholder="Task Name">
+                <input class=" border px-1 w-1/4" type="time" id="newTaskTime">
                 <button type="button" class="bg-green-400 text-white rounded-sm px-1" onclick="saveNewName(event)">Save</button>
                 <button type="button" class=" text-red-500 border rounded-sm px-1" onclick="loadTasks()">Close</button>`
 
@@ -103,19 +160,28 @@
         function saveNewName(event) {
             let tasks= retrieveArray('tasks');
             const newName = document.getElementById('newTaskName').value;
-            const taskId = event.target.parentNode.id;
-            if (taskId >= 0 && taskId < tasks.length) {
-                try {
-                    tasks[taskId].task = newName;
-                    storeArray('tasks', tasks);
-                    loadTasks();
-
-                } catch (error) {
-                    console.log(error)
-
+            const newTime = document.getElementById('newTaskTime').value;
+            if(newName.length>0){
+                const taskId = event.target.parentNode.id;
+                if (taskId >= 0 && taskId < tasks.length) {
+                    try {
+                        tasks[taskId].task = newName;
+                        if(newTime.length>0){
+                            tasks[taskId].time = newTime;
+                        }
+                        storeArray('tasks', tasks);
+                        loadTasks();
+    
+                    } catch (error) {
+                        console.log(error)
+    
+                    }
+                } else {
+                    console.log('Invalid task ID:', taskId);
                 }
-            } else {
-                console.log('Invalid task ID:', taskId);
+
+            }else{
+                alert("Invalid Input")
             }
 
         }
